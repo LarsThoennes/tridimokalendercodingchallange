@@ -1,54 +1,96 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import '@mobiscroll/react/dist/css/mobiscroll.min.css'; // CSS Datei von Mobiscroll wird importiert
-import { Datepicker, Eventcalendar, getJson, setOptions } from '@mobiscroll/react'; // Mobiscroll Funktionen werden importiert
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import '@mobiscroll/react/dist/css/mobiscroll.min.css'; 
+import { Datepicker, Eventcalendar, Page, setOptions, localeDe, CalendarNav, Segmented, SegmentedGroup } from '@mobiscroll/react';
+import Header from './components/header';
 
-setOptions({ // 
-  theme: 'ios', // Hier könnte man Material / Windows  verwenden 
-  themeVariant: 'light' // Hier könnte man z.B. dark verwenden etc.
+setOptions({
+  locale: localeDe,
+  theme: 'ios',
+  themeVariant: 'light'
 });
 
 function App() {
   const [myEvents, setEvents] = useState([]);
   const [mySelectedDate, setSelectedDate] = useState(new Date());
-  const dayView = useMemo(() => ({ schedule: { type: 'day' } }), []);
+  const [view, setView] = useState('month'); 
+  const [calView, setCalView] = useState({ schedule: { type: 'month' } }); 
 
-  const handleDateChange = useCallback((args) => { // Wird aufgerufen wenn sich das datum im datepicker ändert
-    setSelectedDate(args.value);
-  }, []);
+  const calInst = useRef();
 
-  const handleSelectedDateChange = useCallback((args) => { // Wird aufgerufen wenn sich das Datum im Eventcalender ändert
-    setSelectedDate(args.date);
-  }, []);
-
-  // Ruft die Daten von der API ab
-  useEffect(() => { // Wird ausgeführt wenn die Component das erstemal geladen wird
-    fetch('https://hook.eu1.make.com/2arll9f3zzxg6a42h6nsqiy4lmpfpi62') // URL der Api wird gefetcht
-      .then(response => response.json()) // Daten werden als json gespeichert
-      .then(data => { // Daten werden verarbeitet wie MobiScroll sie benötigt: start, end und title
+  useEffect(() => {
+    fetch('https://hook.eu1.make.com/2arll9f3zzxg6a42h6nsqiy4lmpfpi62')
+      .then(response => response.json())
+      .then(data => {
         const events = data.termine.map(event => ({
           start: new Date(event.start),
           end: new Date(event.end),
           title: event.title
         }));
-        setEvents(events); // Speichert die daten in der konstanten myEvents
+        setEvents(events);
       })
-      .catch(error => { // Wirft bei Bedarf einen Fehler
+      .catch(error => {
         console.error('Error fetching data:', error);
       });
   }, []);
 
-  // Erstellt den vorgebenen HTML-Teil von Mobiscroll
+  const handleDateChange = useCallback((args) => {
+    setSelectedDate(args.value);
+  }, []);
+
+  const changeView = useCallback((event) => {
+    let newCalView;
+
+    switch (event.target.value) {
+      case 'week':
+        newCalView = { schedule: { type: 'week' } };
+        break;
+      case 'month':
+      default:
+        newCalView = { schedule: { type: 'month' } };
+        break;
+    }
+
+    setView(event.target.value); 
+    setCalView(newCalView);  
+  }, []);
+
+  const renderMyHeader = useCallback(
+    () => (
+      <>
+        <CalendarNav />
+        <SegmentedGroup value={view} onChange={changeView}>
+          <Segmented className='change-period' value="week">Week</Segmented>
+          <Segmented className='change-period' value="month">Month</Segmented>
+        </SegmentedGroup>
+      </>
+    ),
+    [changeView, view],
+  );
+
   return (
-    <div className="mds-external-nav-scheduler mbsc-flex">
-        {/* Kalender Funktion oben links */}
-      <div className="mds-external-nav-dp">
-        <Datepicker display="inline" value={mySelectedDate} onChange={handleDateChange} />
-      </div>
-        {/* Der Main Kalender in dem die Termine angezeigt werden */}
-      <div className="mds-external-nav-ec mbsc-flex-1-1">
-        <Eventcalendar data={myEvents} selectedDate={mySelectedDate} view={dayView} onSelectedDateChange={handleSelectedDateChange} />
-      </div>
-    </div>
+    <>
+      <Header></Header>
+      <Page className="mds-full-height">
+        <div className="mds-full-height mbsc-flex">
+          <div className="mds-external-nav-dp">
+            <Datepicker value={mySelectedDate} display="inline" onChange={handleDateChange} />
+          </div>
+          <div className="mds-search-calendar mbsc-flex-1-1">
+            <Eventcalendar
+              clickToCreate={false}
+              data={myEvents}
+              dragToCreate={false}
+              dragToMove={false}
+              dragToResize={false}
+              ref={calInst}
+              view={calView} 
+              selectedDate={mySelectedDate}
+              renderHeader={renderMyHeader}
+            />
+          </div>
+        </div>
+      </Page>
+    </>
   );
 }
 

@@ -1,0 +1,34 @@
+.header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100vw;
+    height: 60px;
+}
+
+.header-left {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.logo-img {
+    height: 60px;
+    margin-left: 32px;
+}
+
+h1 {
+    margin: 0;
+    margin-left: 32px;
+    margin-right: 32px;
+    font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+
+.h1-grey {
+    color: grey;
+}
+
+.user-name {
+    font-size: 16px;
+}
